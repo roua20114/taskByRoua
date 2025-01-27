@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table, th, td { border: 1px solid #ccc; }
+        th, td { padding: 10px; text-align: left; }
+        .color-box { display: inline-block; width: 20px; height: 20px; border-radius: 3px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; }
+        .modal-content { background: #fff; padding: 20px; border-radius: 8px; width: 50%; text-align: center; }
+        .modal img { max-width: 100%; height: auto; }
+        .close-modal { float: right; cursor: pointer; color: red; }
+    </style>
+</head>
+<body>
+    <h1>Task Viewer</h1>
+    <input type="text" id="search" placeholder="Search...">
+    <table id="taskTable">
+        <thead>
+            <tr>
+                <th>Task</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Color</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <button id="openModal">Open Modal</button>
+    <div class="modal" id="imageModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h3>Select and View Image</h3>
+            <input type="file" id="imageInput" accept="image/*">
+            <br><br>
+            <img id="previewImage" src="#" alt="Image Preview" style="display: none;">
+        </div>
+    </div>
+    <script>
+       
+        async function fetchData() {
+            const response = await fetch('fetch_tasks.php');
+            const data = await response.json();
+            const tableBody = document.querySelector('#taskTable tbody');
+            tableBody.innerHTML = '';
+            data.forEach(task => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${task.task}</td>
+                    <td>${task.title}</td>
+                    <td>${task.description}</td>
+                    <td><span class="color-box" style="background-color: ${task.colorCode}"></span> ${task.colorCode}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    
+        document.getElementById('search').addEventListener('input', function () {
+            const searchText = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#taskTable tbody tr');
+            rows.forEach(row => {
+                const cells = Array.from(row.children);
+                const match = cells.some(cell => cell.textContent.toLowerCase().includes(searchText));
+                row.style.display = match ? '' : 'none';
+            });
+        });
+       
+        const modal = document.getElementById('imageModal');
+        const openModalButton = document.getElementById('openModal');
+        const closeModalButton = document.getElementById('closeModal');
+        const imageInput = document.getElementById('imageInput');
+        const previewImage = document.getElementById('previewImage');
+        openModalButton.addEventListener('click', () => modal.style.display = 'flex');
+        closeModalButton.addEventListener('click', () => modal.style.display = 'none');
+        imageInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        setInterval(fetchData, 60 * 60 * 1000); 
+       
+        fetchData();
+    </script>
+</body>
+</html>
